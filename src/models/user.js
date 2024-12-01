@@ -1,4 +1,8 @@
 const mongoose = require('mongoose');
+const validator = require('validator');
+const jwt = require('jsonwebtoken');
+const bcrypt = require("bcrypt");
+
 const userSchema = new mongoose.Schema({
     firstName: {
         type: String,
@@ -15,10 +19,22 @@ const userSchema = new mongoose.Schema({
         index: true,
         unique: true,
         trim: true,
+        validate(value) {
+          if(!validator.isEmail(value)) {
+            throw new Error("invalid email adress")
+          }
+        }
+        
     },
+
     password: {
         type: String,
         required: true,
+        validate(value) {
+            if(!validator.isStrongPassword(value)) {
+              throw new Error("your password is very weak")
+            }
+          }
     },
     age: {
         type: Number,
@@ -37,7 +53,12 @@ const userSchema = new mongoose.Schema({
     },
     photoUrl: {
         type: String,
-        default: "https://i.insider.com/66d9b2d95444ffafa76263d4?width=800&format=jpeg&auto=webp"
+        default: "https://i.insider.com/66d9b2d95444ffafa76263d4?width=800&format=jpeg&auto=webp",
+        validate(value) {
+            if(!validator.isURL(value)) {
+              throw new Error("invalid PHOTO URL")
+            }
+          }
     },
     about: {
         type: String,
@@ -50,6 +71,29 @@ const userSchema = new mongoose.Schema({
     timestamps: true,
 });
 
+userSchema.methods.getJWT =  async function () {
+    const user = this;
+    const token = await jwt.sign({_id : user._id },"DEV@TINDER$25022006",
+    { expiresIn: "1d"
+
+     });
+
+     return token;
+};
+
+userSchema.methods.validatePassword = async function(passwordInputByUser) {
+    const user = this;
+    const passwordHash = user.password;
+    const isPasswordValid =  await bcrypt.compare(
+        passwordInputByUser,
+        passwordHash
+
+    );
+    return isPasswordValid
+};   
+
+    
+   
 
 
 module.exports = mongoose.model("User", userSchema);
