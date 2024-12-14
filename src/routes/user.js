@@ -4,7 +4,7 @@ const ConnectionRequest = require("../models/connectionRequest");
 const User = require('../models/user');
 const userRouter = express.Router();
 
-const USER_SAFE_DATA = "firstName lastName photoUrl age gender skills";
+const USER_SAFE_DATA = "firstName lastName photoUrl age gender skills about";
 
 
 userRouter.get("/user/requests/received", userAuth, async(req,res) =>{
@@ -15,6 +15,7 @@ userRouter.get("/user/requests/received", userAuth, async(req,res) =>{
         const connectionRequest = await ConnectionRequest.find({
             toUserId: loggedInUser._id,
             status: "interested",
+            
 
 
 
@@ -49,12 +50,14 @@ userRouter.get("/user/connections", userAuth, async(req,res) => {
         }).populate("fromUserId", USER_SAFE_DATA)
           .populate("toUserId", USER_SAFE_DATA);
 
-        const data = connectionRequest.map((row) => {
-            if(row.fromUserId._id.toString() === loggedInUser._id.toString())  {
-                 return row.toUserId
+          const data = connectionRequest.map((row) => {
+            if (row.fromUserId._id.toString() === loggedInUser._id.toString()) {
+                return row.toUserId; // Return the connected user
+            } else {
+                return row.fromUserId; // Return the other connected user
             }
-            row.fromUserId
         });
+        
 
         res.json({data});
 
